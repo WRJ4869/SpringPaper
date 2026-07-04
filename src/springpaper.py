@@ -3,6 +3,7 @@ import json
 import mimetypes
 import os
 import re
+import sys
 import threading
 import time
 from io import BytesIO
@@ -22,7 +23,10 @@ from PIL import Image
 from openai import OpenAI
 
 
-APP_DIR = Path(__file__).resolve().parents[1]
+if getattr(sys, "frozen", False):
+    APP_DIR = Path(sys.executable).resolve().parent
+else:
+    APP_DIR = Path(__file__).resolve().parents[1]
 CONFIG_PATH = APP_DIR / "config.json"
 PROMPT_PATH = APP_DIR / "scoring_prompt.md"
 LAST_CAPTURE_PATH = APP_DIR / "last_essay_capture.png"

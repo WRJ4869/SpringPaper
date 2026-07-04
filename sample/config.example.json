@@ -1,0 +1,21 @@
+{
+  "provider": "siliconflow",
+  "base_url": "https://api.siliconflow.cn/v1",
+  "api_key_env": "SILICONFLOW_API_KEY",
+  "model": "Qwen/Qwen3-VL-32B-Instruct",
+  "extra_prompt": "本次为校内考试阅卷，请依据评分标准给出建议分。AI 只提供建议，最终判断属于老师。",
+  "support_material_paths": [],
+  "max_image_side": 1600,
+  "request_timeout_seconds": 180,
+  "max_output_tokens": 800,
+  "presentation_override": "自动",
+  "max_score": 50,
+  "essay_region": null,
+  "score_grid": null,
+  "submit_button": null,
+  "auto_submit_after_confirm": true,
+  "auto_loop_max_count": 20,
+  "auto_loop_delay_seconds": 1.5,
+  "auto_loop_pause_on_recheck": true,
+  "click_pause_seconds": 0.15
+}

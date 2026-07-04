@@ -16,6 +16,7 @@ SpringPaper（春笺）第一次进入 Release-ready 阶段。
 - CustomTkinter UI：完成从原生 Tkinter 到温暖桌面工作台界面的升级。
 - SpringPaper 品牌命名：确立“春笺 / SpringPaper”名称与“AI 提高效率，判断仍属于老师”的产品理念。
 - About 弹窗：加入极简版本信息与产品理念展示。
+- 发布包封装：加入 `SpringPaper.exe` 打包脚本、首次使用说明、配置模板、图标与版本信息。
 
 ### Notes
 

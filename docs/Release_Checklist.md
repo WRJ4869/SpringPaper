@@ -10,6 +10,9 @@
 - [ ] `requirements.txt` lists only actual dependencies.
 - [ ] `.gitignore` excludes local and sensitive files.
 - [ ] `LICENSE` is present.
+- [ ] `首次使用说明.md` is present.
+- [ ] `sample/config.example.json` is present and contains no real API key.
+- [ ] `assets/springpaper.ico` is present.
 
 ## Sensitive Files
 
@@ -33,6 +36,8 @@ Do not upload:
 - [ ] About dialog opens.
 - [ ] Existing scoring workflow is not changed.
 - [ ] Logs still write locally.
+- [ ] `build_release.ps1` creates `releases/SpringPaper-v1.0.0/`.
+- [ ] Release package contains `SpringPaper.exe`, README, LICENSE, CHANGELOG, first-use guide, assets, docs, and sample files.
 
 ## First Commit
 

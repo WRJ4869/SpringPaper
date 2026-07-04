@@ -52,6 +52,16 @@ powershell -ExecutionPolicy Bypass -File .\run_springpaper.ps1
 python .\src\springpaper.py
 ```
 
+## 发布包
+
+正式发布包位于：
+
+```text
+releases/SpringPaper-v1.0.0/
+```
+
+面向非开发者时，只需要把 `SpringPaper-v1.0.0.zip` 发给对方。解压后双击 `SpringPaper.exe`，再按 `首次使用说明.md` 完成 API、评分标准和区域校准即可。
+
 ## 基本使用流程
 
 1. 在“AI与标准”中选择模型，填写 Base URL、API Key、题目和评分标准。
@@ -101,9 +111,13 @@ SpringPaper/
 ├── src/                 # Python 源码
 ├── assets/              # Logo 与视觉资源
 ├── docs/                # 设计系统与说明文档
+├── sample/              # 配置模板
+├── tools/               # 发布辅助脚本
 ├── logs/                # 本地日志，默认不上传
 ├── releases/            # 打包产物，默认不上传
 ├── scoring_prompt.md    # 默认评分提示词
+├── 首次使用说明.md
+├── build_release.ps1
 ├── README.md
 ├── CHANGELOG.md
 ├── requirements.txt
