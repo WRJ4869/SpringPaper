@@ -38,7 +38,7 @@ SCROLL_UNITS_PER_NOTCH = 30
 TEXTBOX_SCROLL_UNITS_PER_NOTCH = 14
 PRODUCT_NAME_CN = "春笺"
 PRODUCT_NAME_EN = "SpringPaper"
-APP_VERSION = "1.0.0"
+APP_VERSION = "1.1.0"
 BRAND_TAGLINE = "AI 提高效率，判断仍属于老师。"
 TAB_MARKING = "阅卷"
 TAB_STANDARD = "AI与标准"
@@ -55,6 +55,9 @@ DAILY_WHISPERS = [
 ]
 SUPPORTED_IMAGE_EXTENSIONS = {".png", ".jpg", ".jpeg", ".webp", ".bmp"}
 PRESENTATION_LEVELS = ["自动", "整洁", "较整洁", "欠整洁", "凌乱难辨"]
+SUBMIT_MODE_BUTTON = "按钮打分"
+SUBMIT_MODE_INPUT = "输入框打分"
+SUBMIT_MODES = [SUBMIT_MODE_BUTTON, SUBMIT_MODE_INPUT]
 MODEL_PRESETS = [
     "Qwen/Qwen3-VL-32B-Instruct",
     "Qwen/Qwen3-VL-30B-A3B-Instruct",
@@ -206,7 +209,9 @@ class MarkingAssistant:
                 "max_score": 50,
                 "essay_region": None,
                 "score_grid": None,
+                "score_input": None,
                 "submit_button": None,
+                "submit_mode": SUBMIT_MODE_BUTTON,
                 "auto_submit_after_confirm": True,
                 "auto_loop_max_count": 20,
                 "auto_loop_delay_seconds": 1.5,
@@ -231,6 +236,9 @@ class MarkingAssistant:
         self.auto_loop_delay = StringVar(value=str(self.config.get("auto_loop_delay_seconds", 1.5)))
         self.auto_loop_pause_on_recheck = BooleanVar(value=bool(self.config.get("auto_loop_pause_on_recheck", True)))
         self.presentation_override = StringVar(value=self.config.get("presentation_override", "自动"))
+        self.submit_mode = StringVar(value=self.config.get("submit_mode", SUBMIT_MODE_BUTTON))
+        if self.submit_mode.get() not in SUBMIT_MODES:
+            self.submit_mode.set(SUBMIT_MODE_BUTTON)
         self.support_material_paths = list(self.config.get("support_material_paths", []))
         self.task_started_at = None
         self.last_result = None
@@ -249,14 +257,17 @@ class MarkingAssistant:
 
     def startup_status_text(self):
         essay_ready = bool(self.config.get("essay_region"))
-        grid_ready = bool(self.config.get("score_grid"))
+        if self.config.get("submit_mode") == SUBMIT_MODE_INPUT:
+            score_ready = bool(self.config.get("score_input"))
+        else:
+            score_ready = bool(self.config.get("score_grid"))
         submit_ready = bool(self.config.get("submit_button"))
-        if essay_ready and grid_ready and submit_ready:
+        if essay_ready and score_ready and submit_ready:
             return "今日准备完成，可以直接开始阅卷。"
-        if essay_ready and grid_ready:
-            return "作文区域和分数网格已校准；建议记录提交按钮后开始。"
+        if essay_ready and score_ready:
+            return "作文区域和提交位置已校准；建议记录提交按钮后开始。"
         if essay_ready:
-            return "已校准作文区域；还需要校准分数网格。"
+            return "已校准作文区域；还需要校准分数网格或分数输入框。"
         return "首次使用建议先完成校准。"
 
     def build_ui(self):
@@ -603,6 +614,23 @@ class MarkingAssistant:
                 font=self.ui_font,
             ),
         )
+        field(
+            review_card,
+            "提交方式",
+            ctk.CTkOptionMenu(
+                review_card,
+                variable=self.submit_mode,
+                values=SUBMIT_MODES,
+                command=lambda _: self.save_config(),
+                height=40,
+                corner_radius=18,
+                fg_color=self.ui_secondary,
+                button_color=self.ui_secondary_hover,
+                button_hover_color="#E5DDD6",
+                text_color=self.ui_ink,
+                font=self.ui_font,
+            ),
+        )
         ctk.CTkCheckBox(
             review_card,
             text="确认后自动点击提交分数",
@@ -696,6 +724,7 @@ class MarkingAssistant:
         )
         soft_button(calibrate_card, "校准作文区域", self.calibrate_essay_region)
         soft_button(calibrate_card, "校准分数网格", self.calibrate_score_grid)
+        soft_button(calibrate_card, "校准分数输入框", self.record_score_input)
         soft_button(calibrate_card, "记录提交按钮", self.record_submit_button)
         soft_button(calibrate_card, "测试提交按钮", self.click_submit_only)
 
@@ -1068,6 +1097,8 @@ class MarkingAssistant:
             self.config["auto_loop_delay_seconds"] = 1.5
         self.config["auto_loop_pause_on_recheck"] = bool(self.auto_loop_pause_on_recheck.get())
         self.config["presentation_override"] = self.presentation_override.get()
+        submit_mode = self.submit_mode.get()
+        self.config["submit_mode"] = submit_mode if submit_mode in SUBMIT_MODES else SUBMIT_MODE_BUTTON
         save_json(CONFIG_PATH, self.config)
         self.refresh_config_labels()
 
@@ -1090,6 +1121,7 @@ class MarkingAssistant:
     def refresh_config_labels(self):
         essay = self.config.get("essay_region")
         grid = self.config.get("score_grid")
+        score_input = self.config.get("score_input")
         submit = self.config.get("submit_button")
         provider = self.config.get("provider", "openai")
         note = PROVIDERS.get(provider, PROVIDERS["custom"])["note"]
@@ -1103,7 +1135,9 @@ class MarkingAssistant:
             f"提示：{note}",
             f"作文区域：{essay if essay else '未校准'}",
             f"分数网格：{grid if grid else '未校准'}",
+            f"分数输入框：{score_input if score_input else '未记录'}",
             f"网页提交分数按钮：{submit if submit else '未记录'}",
+            f"提交方式：{self.submit_mode.get()}",
             f"人工卷面判断：{self.presentation_override.get()}",
         ]
         self.config_label.configure(text="\n".join(lines))
@@ -1416,6 +1450,16 @@ class MarkingAssistant:
         self.save_config()
         self.status.set("分数网格已校准。")
 
+    def record_score_input(self):
+        self.status.set("请在 3 秒内把鼠标移到智学网网页右侧的分数输入框中心。")
+        self.root.after(3000, self.capture_score_input_position)
+
+    def capture_score_input_position(self):
+        x, y = pyautogui.position()
+        self.config["score_input"] = {"x": int(x), "y": int(y)}
+        self.save_config()
+        self.status.set(f"分数输入框已记录：{x}, {y}")
+
     def record_submit_button(self):
         self.status.set("请在 3 秒内把鼠标移到智学网网页右侧的“提交分数”按钮中心。")
         self.root.after(3000, self.capture_submit_position)
@@ -1526,8 +1570,7 @@ class MarkingAssistant:
         grid = self.config.get("score_grid")
         if not grid:
             raise RuntimeError("请先校准分数网格。")
-        if score < 0 or score > int(self.config.get("max_score", 50)):
-            raise RuntimeError(f"分数超出范围：{score}")
+        self.validate_score_range(score)
         cols = 5
         rows = 11
         cell_w = grid["w"] / cols
@@ -1539,6 +1582,10 @@ class MarkingAssistant:
             col = 0
         return int(grid["x"] + (col + 0.5) * cell_w), int(grid["y"] + (row + 0.5) * cell_h)
 
+    def validate_score_range(self, score):
+        if score < 0 or score > int(self.config.get("max_score", 50)):
+            raise RuntimeError(f"分数超出范围：{score}")
+
     def accept_and_submit(self):
         if not self.last_result:
             messagebox.showwarning("没有建议分", "请先点击“截图并评分”。")
@@ -1546,26 +1593,44 @@ class MarkingAssistant:
         try:
             score = int(self.last_result.get("adjusted_score", self.last_result["score"]))
             self.click_score_and_maybe_submit(score, submit=self.auto_submit.get())
-            self.status.set(f"已点击 {score} 分" + ("并提交。" if self.auto_submit.get() else "。"))
+            action = "已输入" if self.submit_mode.get() == SUBMIT_MODE_INPUT else "已点击"
+            self.status.set(f"{action} {score} 分" + ("并提交。" if self.auto_submit.get() else "。"))
         except Exception as exc:
             self.root.deiconify()
             messagebox.showerror("提交失败", str(exc))
 
     def click_score_and_maybe_submit(self, score, submit=True):
-        x, y = self.score_point(score)
+        self.validate_score_range(score)
         pause = float(self.config.get("click_pause_seconds", 0.15))
         self.root.withdraw()
         try:
             time.sleep(0.2)
-            pyautogui.click(x, y)
+            if self.submit_mode.get() == SUBMIT_MODE_INPUT:
+                self.input_score(score, pause)
+            else:
+                x, y = self.score_point(score)
+                pyautogui.click(x, y)
             time.sleep(pause)
             if submit:
-                submit_button = self.config.get("submit_button")
-                if not submit_button:
-                    raise RuntimeError("请先记录网页上的“提交分数”按钮。")
-                pyautogui.click(int(submit_button["x"]), int(submit_button["y"]))
+                self.click_recorded_submit_button()
         finally:
             self.root.deiconify()
+
+    def input_score(self, score, pause):
+        score_input = self.config.get("score_input")
+        if not score_input:
+            raise RuntimeError("请先校准分数输入框，或切回按钮打分模式。")
+        pyautogui.click(int(score_input["x"]), int(score_input["y"]))
+        time.sleep(pause)
+        pyautogui.hotkey("ctrl", "a")
+        time.sleep(pause)
+        pyautogui.write(str(score), interval=0.02)
+
+    def click_recorded_submit_button(self):
+        submit_button = self.config.get("submit_button")
+        if not submit_button:
+            raise RuntimeError("请先记录网页上的“提交分数”按钮。")
+        pyautogui.click(int(submit_button["x"]), int(submit_button["y"]))
 
     def should_pause_auto_loop(self, result):
         if not self.auto_loop_pause_on_recheck.get():
@@ -1586,7 +1651,11 @@ class MarkingAssistant:
         if not self.config.get("essay_region"):
             messagebox.showwarning("未校准", "请先校准作文区域。")
             return
-        if not self.config.get("score_grid"):
+        if self.submit_mode.get() == SUBMIT_MODE_INPUT:
+            if not self.config.get("score_input"):
+                messagebox.showwarning("未记录", "输入框打分模式需要先校准分数输入框。")
+                return
+        elif not self.config.get("score_grid"):
             messagebox.showwarning("未校准", "请先校准分数网格。")
             return
         if not self.config.get("submit_button"):
