@@ -1,0 +1,40 @@
+<svg width="980" height="300" viewBox="0 0 980 300" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">SpringPaper logo lockup</title>
+  <desc id="desc">SpringPaper brand lockup with a quiet letter paper mark and bilingual wordmark.</desc>
+  <defs>
+    <linearGradient id="paper" x1="73" y1="40" x2="181" y2="228" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFDF8"/>
+      <stop offset="1" stop-color="#FFF7EF"/>
+    </linearGradient>
+    <linearGradient id="fold" x1="166" y1="48" x2="200" y2="85" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFE7D6"/>
+      <stop offset="1" stop-color="#FFFFFF"/>
+    </linearGradient>
+    <filter id="shadow" x="29" y="16" width="220" height="252" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="8" stdDeviation="11" flood-color="#BDAEA5" flood-opacity="0.22"/>
+    </filter>
+  </defs>
+
+  <rect width="980" height="300" rx="48" fill="#FDF8F3"/>
+  <g filter="url(#shadow)">
+    <path d="M73 40H166L200 74V226C200 232.627 194.627 238 188 238H73C66.3726 238 61 232.627 61 226V52C61 45.3726 66.3726 40 73 40Z" fill="url(#paper)" stroke="#ECDDD7" stroke-width="3"/>
+    <path d="M166 40V67C166 70.866 169.134 74 173 74H200L166 40Z" fill="url(#fold)" stroke="#ECDDD7" stroke-width="3" stroke-linejoin="round"/>
+    <path d="M88 91H153" stroke="#ECDDD7" stroke-width="5" stroke-linecap="round"/>
+    <path d="M88 114H176" stroke="#F2E6E0" stroke-width="5" stroke-linecap="round"/>
+    <path d="M88 137H148" stroke="#F2E6E0" stroke-width="5" stroke-linecap="round"/>
+    <path d="M61 166C88 153 114 153 134 166C154 178 176 178 200 166" stroke="#B9DEC9" stroke-width="13" stroke-linecap="round"/>
+    <path d="M61 166C88 153 114 153 134 166C154 178 176 178 200 166" stroke="#9EC9B1" stroke-width="3" stroke-linecap="round" opacity="0.55"/>
+    <g transform="translate(158 191) scale(.55)">
+      <path d="M29.3 10.7C38.8 3.8 49.5 7.5 51.3 18.2C41.1 20.8 34.3 19.1 29.3 10.7Z" fill="#F8C8DC"/>
+      <path d="M28.5 13.1C25.2 1.9 32.5 -6.7 42.4 -2.8C41.3 7.5 37.3 13.1 28.5 13.1Z" fill="#F6B8D0"/>
+      <path d="M25.9 14.3C16.3 7.6 17.1 -3.8 27.4 -7.1C32.8 1.8 33.2 8.7 25.9 14.3Z" fill="#F8C8DC"/>
+      <path d="M24.6 17C13 17.2 6.8 7.7 13.1 -1C22.9 2.5 27.5 7.6 24.6 17Z" fill="#F6B8D0"/>
+      <path d="M26.4 19.3C20.5 29.4 9.2 30 4.9 20.2C13.3 14 20.1 12.8 26.4 19.3Z" fill="#F8C8DC"/>
+      <circle cx="27.3" cy="15.8" r="6.2" fill="#D9B779"/>
+    </g>
+  </g>
+
+  <text x="292" y="126" fill="#2F3747" font-family="Microsoft YaHei UI, MiSans, HarmonyOS Sans, Arial, sans-serif" font-size="58" font-weight="700">春笺</text>
+  <text x="294" y="173" fill="#6F7285" font-family="Microsoft YaHei UI, MiSans, HarmonyOS Sans, Arial, sans-serif" font-size="32" font-weight="600">SpringPaper</text>
+  <text x="294" y="216" fill="#6F7285" font-family="Microsoft YaHei UI, MiSans, HarmonyOS Sans, Arial, sans-serif" font-size="24">AI 提高效率，判断仍属于老师。</text>
+</svg>
