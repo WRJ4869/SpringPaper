@@ -8,6 +8,8 @@
   "max_image_side": 1600,
   "request_timeout_seconds": 180,
   "max_output_tokens": 800,
+  "single_output_mode": "标准",
+  "auto_output_mode": "极速",
   "presentation_override": "自动",
   "max_score": 50,
   "essay_region": null,

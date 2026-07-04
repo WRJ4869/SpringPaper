@@ -38,7 +38,7 @@ SCROLL_UNITS_PER_NOTCH = 30
 TEXTBOX_SCROLL_UNITS_PER_NOTCH = 14
 PRODUCT_NAME_CN = "春笺"
 PRODUCT_NAME_EN = "SpringPaper"
-APP_VERSION = "1.1.0"
+APP_VERSION = "1.2.0"
 BRAND_TAGLINE = "AI 提高效率，判断仍属于老师。"
 TAB_MARKING = "阅卷"
 TAB_STANDARD = "AI与标准"
@@ -58,6 +58,41 @@ PRESENTATION_LEVELS = ["自动", "整洁", "较整洁", "欠整洁", "凌乱难�
 SUBMIT_MODE_BUTTON = "按钮打分"
 SUBMIT_MODE_INPUT = "输入框打分"
 SUBMIT_MODES = [SUBMIT_MODE_BUTTON, SUBMIT_MODE_INPUT]
+OUTPUT_MODE_FAST = "极速"
+OUTPUT_MODE_STANDARD = "标准"
+OUTPUT_MODE_REVIEW = "复核"
+OUTPUT_MODES = [OUTPUT_MODE_FAST, OUTPUT_MODE_STANDARD, OUTPUT_MODE_REVIEW]
+OUTPUT_MODE_PROMPTS = {
+    OUTPUT_MODE_FAST: """
+输出模式：极速。
+本输出模式优先级高于前文 JSON 字段要求。
+只返回严格 JSON，不要 Markdown，不要自然语言，不要解释，不要理由。
+JSON 必须且只能包含：
+{
+  "score": 0到50之间的整数,
+  "confidence": "high/medium/low",
+  "recheck": true或false
+}
+不要返回 strengths、weaknesses、notes、comment、reason 或任何其他字段。
+""",
+    OUTPUT_MODE_STANDARD: """
+输出模式：标准。
+本输出模式优先级高于前文 JSON 字段要求。
+只返回严格 JSON，不要 Markdown，不要长篇分析。
+JSON 必须且只能包含：
+{
+  "score": 0到50之间的整数,
+  "confidence": "high/medium/low",
+  "recheck": true或false,
+  "reason": "不超过30个汉字的一句评分理由"
+}
+""",
+    OUTPUT_MODE_REVIEW: """
+输出模式：复核。
+请保留完整评分 JSON，可包含 score、band、confidence、recheck、presentation_level、score_adjustment、reasons、strengths、weaknesses、notes 等字段。
+仍然不要输出 Markdown，不要输出思考过程。
+""",
+}
 MODEL_PRESETS = [
     "Qwen/Qwen3-VL-32B-Instruct",
     "Qwen/Qwen3-VL-30B-A3B-Instruct",
@@ -205,6 +240,8 @@ class MarkingAssistant:
                 "max_image_side": 1600,
                 "request_timeout_seconds": 180,
                 "max_output_tokens": 800,
+                "single_output_mode": OUTPUT_MODE_STANDARD,
+                "auto_output_mode": OUTPUT_MODE_FAST,
                 "presentation_override": "自动",
                 "max_score": 50,
                 "essay_region": None,
@@ -239,6 +276,12 @@ class MarkingAssistant:
         self.submit_mode = StringVar(value=self.config.get("submit_mode", SUBMIT_MODE_BUTTON))
         if self.submit_mode.get() not in SUBMIT_MODES:
             self.submit_mode.set(SUBMIT_MODE_BUTTON)
+        self.single_output_mode = StringVar(value=self.config.get("single_output_mode", OUTPUT_MODE_STANDARD))
+        if self.single_output_mode.get() not in OUTPUT_MODES:
+            self.single_output_mode.set(OUTPUT_MODE_STANDARD)
+        self.auto_output_mode = StringVar(value=self.config.get("auto_output_mode", OUTPUT_MODE_FAST))
+        if self.auto_output_mode.get() not in OUTPUT_MODES:
+            self.auto_output_mode.set(OUTPUT_MODE_FAST)
         self.support_material_paths = list(self.config.get("support_material_paths", []))
         self.task_started_at = None
         self.last_result = None
@@ -685,6 +728,42 @@ class MarkingAssistant:
         soft_button(model_card, "测试视觉输入", self.test_vision_connection)
         soft_button(model_card, "列出可用模型", self.list_available_models)
 
+        strategy_card = make_card(settings_tab, "AI 输出模式", "单篇要有一句理由，连评只要分数；少说一点，阅卷就快一点。")
+        field(
+            strategy_card,
+            "单篇试评",
+            ctk.CTkOptionMenu(
+                strategy_card,
+                variable=self.single_output_mode,
+                values=OUTPUT_MODES,
+                command=lambda _: self.save_config(),
+                height=40,
+                corner_radius=18,
+                fg_color=self.ui_secondary,
+                button_color=self.ui_secondary_hover,
+                button_hover_color="#E5DDD6",
+                text_color=self.ui_ink,
+                font=self.ui_font,
+            ),
+        )
+        field(
+            strategy_card,
+            "自动连评",
+            ctk.CTkOptionMenu(
+                strategy_card,
+                variable=self.auto_output_mode,
+                values=OUTPUT_MODES,
+                command=lambda _: self.save_config(),
+                height=40,
+                corner_radius=18,
+                fg_color=self.ui_secondary,
+                button_color=self.ui_secondary_hover,
+                button_hover_color="#E5DDD6",
+                text_color=self.ui_ink,
+                font=self.ui_font,
+            ),
+        )
+
         api_card = make_card(settings_tab, "接口设置")
         field(api_card, "Base URL（OpenAI 官方可留空）", self.soft_entry(api_card, self.base_url))
         field(api_card, "API Key 环境变量名", self.soft_entry(api_card, self.api_key_env))
@@ -1099,6 +1178,12 @@ class MarkingAssistant:
         self.config["presentation_override"] = self.presentation_override.get()
         submit_mode = self.submit_mode.get()
         self.config["submit_mode"] = submit_mode if submit_mode in SUBMIT_MODES else SUBMIT_MODE_BUTTON
+        single_output_mode = self.single_output_mode.get()
+        auto_output_mode = self.auto_output_mode.get()
+        self.config["single_output_mode"] = (
+            single_output_mode if single_output_mode in OUTPUT_MODES else OUTPUT_MODE_STANDARD
+        )
+        self.config["auto_output_mode"] = auto_output_mode if auto_output_mode in OUTPUT_MODES else OUTPUT_MODE_FAST
         save_json(CONFIG_PATH, self.config)
         self.refresh_config_labels()
 
@@ -1138,6 +1223,8 @@ class MarkingAssistant:
             f"分数输入框：{score_input if score_input else '未记录'}",
             f"网页提交分数按钮：{submit if submit else '未记录'}",
             f"提交方式：{self.submit_mode.get()}",
+            f"单篇输出：{self.single_output_mode.get()}",
+            f"连评输出：{self.auto_output_mode.get()}",
             f"人工卷面判断：{self.presentation_override.get()}",
         ]
         self.config_label.configure(text="\n".join(lines))
@@ -1160,6 +1247,7 @@ class MarkingAssistant:
             "band",
             "presentation_level",
             "score_adjustment",
+            "reason",
             "notes",
             "manual_adjustment",
         ]:
@@ -1290,11 +1378,25 @@ class MarkingAssistant:
             "image_url": {"url": data_url, "detail": "high"},
         }
 
-    def build_scoring_messages(self, essay_image_path):
+    def normalized_output_mode(self, output_mode):
+        return output_mode if output_mode in OUTPUT_MODES else OUTPUT_MODE_STANDARD
+
+    def max_tokens_for_output_mode(self, output_mode):
+        configured = int(self.config.get("max_output_tokens", 800))
+        output_mode = self.normalized_output_mode(output_mode)
+        if output_mode == OUTPUT_MODE_FAST:
+            return min(configured, 120)
+        if output_mode == OUTPUT_MODE_STANDARD:
+            return min(configured, 240)
+        return configured
+
+    def build_scoring_messages(self, essay_image_path, output_mode=None):
+        output_mode = self.normalized_output_mode(output_mode)
         prompt = PROMPT_PATH.read_text(encoding="utf-8")
         extra = self.config.get("extra_prompt", "").strip()
         if extra:
             prompt += "\n\n教师补充说明：\n" + extra
+        prompt += "\n\n" + OUTPUT_MODE_PROMPTS[output_mode].strip()
         prompt += "\n\n下面先给出题目、参考答案或评分标准图片；最后一张是当前学生作文截图。"
 
         content = [{"type": "text", "text": prompt}]
@@ -1503,26 +1605,27 @@ class MarkingAssistant:
 
     def _score_worker(self):
         try:
-            result = self.request_score_for_current_essay()
+            result = self.request_score_for_current_essay(self.single_output_mode.get())
             self.last_result = result
             self.root.after(0, lambda: self.show_result(result))
         except Exception as exc:
             self.root.after(0, lambda exc=exc: self.show_error(exc))
 
-    def request_score_for_current_essay(self):
+    def request_score_for_current_essay(self, output_mode=None):
+        output_mode = self.normalized_output_mode(output_mode)
         image_path = self.capture_essay()
         try:
-            messages, material_count = self.build_scoring_messages(image_path)
+            messages, material_count = self.build_scoring_messages(image_path, output_mode)
         finally:
             Path(image_path).unlink(missing_ok=True)
         self.log(f"已加入材料图片 {material_count} 张。")
-        self.log("正在发送请求给模型；大模型视觉评分可能需要几十秒到数分钟。")
+        self.log(f"正在发送请求给模型；输出模式：{output_mode}。")
         client = self.current_client()
         response = client.chat.completions.create(
             model=self.model.get().strip() or "gpt-4o-mini",
             messages=messages,
             temperature=0.2,
-            max_tokens=int(self.config.get("max_output_tokens", 800)),
+            max_tokens=self.max_tokens_for_output_mode(output_mode),
             timeout=float(self.config.get("request_timeout_seconds", 180)),
         )
         self.log("模型已返回，正在解析评分结果。")
@@ -1680,7 +1783,7 @@ class MarkingAssistant:
             while completed < max_count and not self.auto_loop_stop.is_set():
                 self.task_started_at = time.time()
                 self.log(f"自动连评第 {completed + 1}/{max_count} 份：开始截图评分。")
-                result = self.request_score_for_current_essay()
+                result = self.request_score_for_current_essay(self.auto_output_mode.get())
                 self.last_result = result
                 self.root.after(0, lambda r=result: self.show_result(r))
                 pause, reason = self.should_pause_auto_loop(result)
